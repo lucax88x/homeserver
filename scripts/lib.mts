@@ -21,7 +21,7 @@ export const log = {
 };
 
 /** Check if a container with given hostname exists */
-export async function ctExists(hostname: string): Promise<boolean> {
+async function ctExists(hostname: string): Promise<boolean> {
 	try {
 		const result = await $`pct list 2>/dev/null | grep -qw ${hostname}`;
 		return result.exitCode === 0;
@@ -31,7 +31,7 @@ export async function ctExists(hostname: string): Promise<boolean> {
 }
 
 /** Check if a VM with given name exists */
-export async function vmExists(name: string): Promise<boolean> {
+async function vmExists(name: string): Promise<boolean> {
 	try {
 		const result = await $`qm list 2>/dev/null | grep -qw ${name}`;
 		return result.exitCode === 0;
@@ -41,7 +41,7 @@ export async function vmExists(name: string): Promise<boolean> {
 }
 
 /** Get container ID by hostname */
-export async function getCtId(hostname: string): Promise<string | null> {
+async function getCtId(hostname: string): Promise<string | null> {
 	try {
 		const result =
 			await $`pct list 2>/dev/null | grep -w ${hostname} | awk '{print $1}'`;
@@ -53,7 +53,7 @@ export async function getCtId(hostname: string): Promise<string | null> {
 }
 
 /** Get container IP by ID */
-export async function getCtIp(ctid: string): Promise<string | null> {
+async function getCtIp(ctid: string): Promise<string | null> {
 	try {
 		const result = await $`pct exec ${ctid} -- hostname -I | awk '{print $1}'`;
 		const ip = result.stdout.trim();
@@ -64,17 +64,17 @@ export async function getCtIp(ctid: string): Promise<string | null> {
 }
 
 /** Run a community script for LXC container */
-export async function runCtScript(scriptName: string): Promise<void> {
+async function runCtScript(scriptName: string): Promise<void> {
 	await $`curl -fsSL ${SCRIPTS_URL}/ct/${scriptName}.sh | bash`;
 }
 
 /** Run a community script for VM */
-export async function runVmScript(scriptName: string): Promise<void> {
+async function runVmScript(scriptName: string): Promise<void> {
 	await $`curl -fsSL ${SCRIPTS_URL}/vm/${scriptName}.sh | bash`;
 }
 
 /** Set environment variables for container creation */
-export function setCtVars(options: {
+function setCtVars(options: {
 	unprivileged?: number;
 	cpu?: number;
 	ram?: number;
@@ -91,6 +91,19 @@ export function setCtVars(options: {
 	process.env.var_net = options.net ?? "dhcp";
 	process.env.var_ssh = options.ssh ?? "no";
 }
+
+export const vm = {
+	exists: vmExists,
+	runScript: runVmScript,
+};
+
+export const ct = {
+	exists: ctExists,
+	id: getCtId,
+	ip: getCtIp,
+	runScript: runCtScript,
+	setVars: setCtVars,
+};
 
 /** Get environment variable with default */
 export function env(name: string, defaultValue: string): string {

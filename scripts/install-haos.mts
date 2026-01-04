@@ -3,15 +3,15 @@
  * Install Home Assistant OS VM
  * https://community-scripts.github.io/ProxmoxVE/scripts?id=haos-vm
  */
-import { log, runVmScript, vmExists } from "./lib.mts";
+import { log, vm } from "./lib.mts";
 
 const VM_NAME = "haos";
 
-if (await vmExists(VM_NAME)) {
+if (await vm.exists(VM_NAME)) {
 	log.skip(`Home Assistant OS VM '${VM_NAME}' already exists`);
 	process.exit(0);
 }
 
 log.install("Home Assistant OS VM...");
-await runVmScript("haos-vm");
+await vm.runScript("haos-vm");
 log.ok("Home Assistant OS installed");

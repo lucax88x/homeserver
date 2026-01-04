@@ -7,7 +7,7 @@ import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { $ } from "zx";
-import { log, getCtId, env } from "./lib.mts";
+import { log, ct, env } from "./lib.mts";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoDir = dirname(__dirname);
@@ -16,7 +16,7 @@ const hostname = env("GLANCE_HOSTNAME", "glance");
 const domain = env("DOMAIN", "home.trazzi");
 
 // Get container ID
-const ctid = await getCtId(hostname);
+const ctid = await ct.id(hostname);
 if (!ctid) {
   log.error(`Container '${hostname}' not found`);
   process.exit(1);
