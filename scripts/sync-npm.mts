@@ -6,7 +6,7 @@
 import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { log, getCtId, getCtIp, env } from "./lib.mts";
+import { log, ct, env } from "./lib.mts";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoDir = dirname(__dirname);
@@ -30,13 +30,13 @@ interface NpmProxyHost {
 }
 
 // Get container IP
-const ctid = await getCtId(hostname);
+const ctid = await ct.id(hostname);
 if (!ctid) {
   log.error(`Container '${hostname}' not found`);
   process.exit(1);
 }
 
-const npmIp = await getCtIp(ctid);
+const npmIp = await ct.ip(ctid);
 if (!npmIp) {
   log.error(`Could not get IP for container ${ctid}`);
   process.exit(1);
