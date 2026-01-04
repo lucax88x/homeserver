@@ -1,0 +1,92 @@
+# Glance Dashboard Configuration
+# https://github.com/glanceapp/glance/blob/main/docs/configuration.md
+#
+# Sync to container: just sync-glance
+# Auto-reloads on save (no container restart needed)
+
+server:
+  port: 8080
+  # Set to true when behind Nginx Proxy Manager
+  proxied: true
+
+theme:
+  background-color: 25 14 14
+  primary-color: 217 92 83
+  positive-color: 115 54 76
+  negative-color: 0 70 70
+
+pages:
+  - name: Home
+    columns:
+      - size: small
+        widgets:
+          - type: clock
+            hour-format: 24h
+            timezones:
+              - timezone: Europe/Rome
+                label: Home
+
+          - type: bookmarks
+            groups:
+              - title: Management
+                links:
+                  - title: Proxmox
+                    url: https://proxmox.${DOMAIN}
+                    icon: si:proxmox
+                  - title: Portainer
+                    url: https://portainer.${DOMAIN}
+                    icon: si:portainer
+                  - title: Nginx Proxy Manager
+                    url: https://npm.${DOMAIN}
+                    icon: si:nginx
+
+              - title: Home
+                links:
+                  - title: Home Assistant
+                    url: https://ha.${DOMAIN}
+                    icon: si:homeassistant
+
+      - size: full
+        widgets:
+          - type: monitor
+            cache: 1m
+            title: Services
+            sites:
+              - title: Home Assistant
+                url: https://ha.${DOMAIN}
+                icon: si:homeassistant
+              - title: Jellyfin
+                url: https://jellyfin.${DOMAIN}
+                icon: si:jellyfin
+              - title: AdGuard Home
+                url: https://adguard.${DOMAIN}
+                icon: si:adguard
+              - title: Portainer
+                url: https://portainer.${DOMAIN}
+                icon: si:portainer
+
+          - type: bookmarks
+            groups:
+              - title: Media
+                links:
+                  - title: Jellyfin
+                    url: https://jellyfin.${DOMAIN}
+                    icon: si:jellyfin
+
+              - title: Network
+                links:
+                  - title: AdGuard Home
+                    url: https://adguard.${DOMAIN}
+                    icon: si:adguard
+
+      - size: small
+        widgets:
+          - type: weather
+            location: Rome, Italy
+            hour-format: 24h
+
+          - type: dns-stats
+            service: adguard
+            url: http://adguard:3000
+            # username: admin
+            # password: ${ADGUARD_PASSWORD}

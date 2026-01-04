@@ -1,0 +1,14 @@
+{
+  "name": "homeserver",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "tsc": "tsgo"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@typescript/native-preview": "^7.0.0-dev.20251231",
+    "zx": "^8.2.0"
+  }
+}
