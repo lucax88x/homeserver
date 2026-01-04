@@ -1,16 +1,17 @@
 #!/usr/bin/env npx zx
 /**
  * Sync proxy hosts to Nginx Proxy Manager via API
- * Creates/updates proxy hosts from configs/npm/hosts.csv
+ * Creates/updates proxy hosts from configs/npm/hosts.yaml
  */
 import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { log, ct, env } from "./lib.mts";
+import { YAML } from "zx";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoDir = dirname(__dirname);
-const hostsFile = join(repoDir, "configs/npm/hosts.csv");
+const hostsFile = join(repoDir, "configs/npm/hosts.yaml");
 const hostname = env("NPM_HOSTNAME", "nginx-proxy-manager");
 const domain = env("DOMAIN", "home.trazzi");
 const npmEmail = env("NPM_EMAIL", "admin@example.com");
@@ -26,6 +27,12 @@ interface ProxyHost {
 
 interface NpmProxyHost {
   id: number;
+  domain_names: string[];
+}
+
+interface NpmCertificate {
+  id: number;
+  nice_name: string;
   domain_names: string[];
 }
 
@@ -65,11 +72,59 @@ if (!token) {
 
 log.ok("Authenticated");
 
-// Get existing proxy hosts
-const existingResponse = await fetch(`${npmUrl}/nginx/proxy-hosts`, {
-  headers: { Authorization: `Bearer ${token}` },
-});
-const existingHosts = (await existingResponse.json()) as NpmProxyHost[];
+// Get existing resources
+const existingHosts = (await (
+  await fetch(`${npmUrl}/nginx/proxy-hosts`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+).json()) as NpmProxyHost[];
+
+const existingCerts = (await (
+  await fetch(`${npmUrl}/nginx/certificates`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+).json()) as NpmCertificate[];
+
+// Helper to get or create certificate
+async function getOrCreateCertificate(domainName: string): Promise<number> {
+  const existing = existingCerts.find((c) =>
+    c.domain_names.includes(domainName)
+  );
+  if (existing) {
+    return existing.id;
+  }
+
+  log.info(`Requesting Let's Encrypt certificate for ${domainName}...`);
+  const payload = {
+    provider: "letsencrypt",
+    nice_name: domainName,
+    domain_names: [domainName],
+    meta: {
+      letsencrypt_email: npmEmail,
+      letsencrypt_agree: true,
+      dns_challenge: false,
+    },
+  };
+
+  const response = await fetch(`${npmUrl}/nginx/certificates`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const err = await response.text();
+    log.error(`Failed to create certificate for ${domainName}: ${err}`);
+    return 0;
+  }
+
+  const result = (await response.json()) as { id: number };
+  log.ok(`Certificate created (ID: ${result.id})`);
+  return result.id;
+}
 
 // Create proxy host
 async function createProxyHost(host: ProxyHost): Promise<void> {
@@ -87,6 +142,11 @@ async function createProxyHost(host: ProxyHost): Promise<void> {
 
   log.create(`${domainName} -> ${host.forwardHost}:${host.forwardPort}`);
 
+  let certificateId = 0;
+  if (host.ssl) {
+    certificateId = await getOrCreateCertificate(domainName);
+  }
+
   const payload = {
     domain_names: [domainName],
     forward_scheme: "http",
@@ -95,13 +155,13 @@ async function createProxyHost(host: ProxyHost): Promise<void> {
     block_exploits: true,
     allow_websocket_upgrade: host.websockets,
     access_list_id: 0,
-    certificate_id: 0,
-    ssl_forced: false,
-    http2_support: true,
+    certificate_id: certificateId,
+    ssl_forced: host.ssl,
+    http2_support: host.ssl,
     hsts_enabled: false,
     hsts_subdomains: false,
     meta: {
-      letsencrypt_agree: true,
+      letsencrypt_agree: false, // Not needed here if we use existing cert
       dns_challenge: false,
     },
     advanced_config: "",
@@ -118,29 +178,22 @@ async function createProxyHost(host: ProxyHost): Promise<void> {
     body: JSON.stringify(payload),
   });
 
+  if (!response.ok) {
+    const err = await response.text();
+    log.error(`Failed to create proxy host ${domainName}: ${err}`);
+    return;
+  }
+
   const result = (await response.json()) as { id?: number };
-  console.log(result.id ?? "FAILED");
+  console.log(`[OK] Created host ID: ${result.id ?? "UNKNOWN"}`);
 }
 
 // Parse hosts file
 const hostsContent = await readFile(hostsFile, "utf-8");
-const hosts: ProxyHost[] = hostsContent
-  .split("\n")
-  .filter((line) => line.trim() && !line.startsWith("#"))
-  .map((line) => {
-    const [subdomain, forwardHost, forwardPort, ssl, websockets] =
-      line.split(",");
-    return {
-      subdomain: subdomain.trim(),
-      forwardHost: forwardHost.trim(),
-      forwardPort: parseInt(forwardPort.trim()),
-      ssl: ssl.trim() === "true",
-      websockets: websockets.trim() === "true",
-    };
-  });
+const hosts = YAML.parse(hostsContent) as ProxyHost[];
 
 console.log("");
-log.sync("Processing proxy hosts...");
+log.sync(`Processing ${hosts.length} proxy hosts...`);
 
 for (const host of hosts) {
   await createProxyHost(host);
@@ -148,9 +201,3 @@ for (const host of hosts) {
 
 console.log("");
 log.ok("Proxy hosts synced");
-console.log("");
-console.log("[NEXT] To enable Let's Encrypt:");
-console.log(`  1. Open NPM web UI: http://${npmIp}:81`);
-console.log("  2. Edit each proxy host -> SSL tab");
-console.log("  3. Request new SSL certificate -> Let's Encrypt");
-console.log("  4. Enable 'Force SSL' and 'HTTP/2 Support'");

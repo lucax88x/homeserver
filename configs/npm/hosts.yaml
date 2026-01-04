@@ -1,0 +1,41 @@
+- subdomain: ha
+  forwardHost: homeassistant
+  forwardPort: 8123
+  ssl: true
+  websockets: true
+
+- subdomain: jellyfin
+  forwardHost: jellyfin
+  forwardPort: 8096
+  ssl: true
+  websockets: true
+
+- subdomain: adguard
+  forwardHost: adguard
+  forwardPort: 3000
+  ssl: true
+  websockets: false
+
+- subdomain: portainer
+  forwardHost: portainer
+  forwardPort: 9443
+  ssl: true
+  websockets: true
+
+- subdomain: npm
+  forwardHost: nginx-proxy-manager
+  forwardPort: 81
+  ssl: true
+  websockets: false
+
+- subdomain: glance
+  forwardHost: glance
+  forwardPort: 8080
+  ssl: true
+  websockets: false
+
+# - subdomain: proxmox
+#   forwardHost: <proxmox-ip>
+#   forwardPort: 8006
+#   ssl: true
+#   websockets: true
