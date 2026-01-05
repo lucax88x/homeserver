@@ -3,7 +3,7 @@
  */
 import { $ } from "zx";
 
-$.verbose = false;
+$.verbose = true;
 
 export const SCRIPTS_URL =
 	process.env.SCRIPTS_URL ??

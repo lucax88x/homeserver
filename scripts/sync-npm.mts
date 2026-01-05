@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 import { $ } from "zx";
 import { ct, env, log } from "./lib.mts";
 
-$.verbose = false;
+$.verbose = true;
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoDir = dirname(__dirname);

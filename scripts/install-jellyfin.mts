@@ -7,7 +7,7 @@ import { $ } from "zx";
  */
 import { ct, env, log } from "./lib.mts";
 
-$.verbose = false;
+$.verbose = true;
 
 const hostname = env("JELLYFIN_HOSTNAME", "jellyfin");
 

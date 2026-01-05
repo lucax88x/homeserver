@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 import { $ } from "zx";
 import { ct, env, log } from "./lib.mts";
 
-$.verbose = false;
+$.verbose = true;
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoDir = dirname(__dirname);
@@ -42,7 +42,7 @@ configContent = configContent.replace(/\$\{(\w+)\}/g, (_, varName) => {
 log.sync(`Glance config -> ${hostname} (CT ${ctid})`);
 
 // Write config to container
-$.verbose = false;
+$.verbose = true;
 await $`echo ${configContent} | pct exec ${ctid} -- tee /opt/glance/glance.yml > /dev/null`;
 
 log.ok("Glance config synced (auto-reloads on save)");

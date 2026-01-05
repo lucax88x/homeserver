@@ -6,7 +6,7 @@ import { $ } from "zx";
  */
 import { log, vm } from "./lib.mts";
 
-$.verbose = false;
+$.verbose = true;
 
 const VM_NAME = "haos";
 
