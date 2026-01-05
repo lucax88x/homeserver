@@ -15,13 +15,6 @@ scripts_dir := justfile_directory() / "scripts"
 default:
     @just --list
 
-# Install all configured services
-install: install-haos install-nginx-proxy-manager install-jellyfin install-adguard install-portainer install-glance
-    @echo ""
-    @echo "All services installed!"
-    @echo ""
-    @just list
-
 # List installed containers and VMs
 list:
     @echo "=== VMs ==="
@@ -36,8 +29,8 @@ check:
     @echo "Proxmox VE $(pveversion --version)"
 
 # Typecheck all scripts
-typecheck:
-    pnpm typecheck
+tsc:
+    pnpm tsc
 
 # -----------------------------------------------------------------------------
 # Services

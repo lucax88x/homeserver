@@ -1,9 +1,12 @@
 #!/usr/bin/env npx zx
+import { $ } from "zx";
 /**
  * Install Home Assistant OS VM
  * https://community-scripts.github.io/ProxmoxVE/scripts?id=haos-vm
  */
 import { log, vm } from "./lib.mts";
+
+$.verbose = false;
 
 const VM_NAME = "haos";
 

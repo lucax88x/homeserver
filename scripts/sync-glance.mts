@@ -3,11 +3,14 @@
  * Sync Glance configuration to container
  * Config auto-reloads, no restart needed
  */
+
 import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { $ } from "zx";
-import { log, ct, env } from "./lib.mts";
+import { ct, env, log } from "./lib.mts";
+
+$.verbose = false;
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoDir = dirname(__dirname);
@@ -18,22 +21,22 @@ const domain = env("DOMAIN", "home.trazzi");
 // Get container ID
 const ctid = await ct.id(hostname);
 if (!ctid) {
-  log.error(`Container '${hostname}' not found`);
-  process.exit(1);
+	log.error(`Container '${hostname}' not found`);
+	process.exit(1);
 }
 
 // Read and substitute environment variables in config
 let configContent: string;
 try {
-  configContent = await readFile(configSrc, "utf-8");
+	configContent = await readFile(configSrc, "utf-8");
 } catch {
-  log.error(`Config file not found: ${configSrc}`);
-  process.exit(1);
+	log.error(`Config file not found: ${configSrc}`);
+	process.exit(1);
 }
 
 // Simple env var substitution for ${VAR} syntax
 configContent = configContent.replace(/\$\{(\w+)\}/g, (_, varName) => {
-  return process.env[varName] ?? (varName === "DOMAIN" ? domain : "");
+	return process.env[varName] ?? (varName === "DOMAIN" ? domain : "");
 });
 
 log.sync(`Glance config -> ${hostname} (CT ${ctid})`);

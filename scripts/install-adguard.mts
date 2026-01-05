@@ -1,25 +1,28 @@
 #!/usr/bin/env npx zx
+import { $ } from "zx";
 /**
  * Install AdGuard Home LXC
  * https://community-scripts.github.io/ProxmoxVE/scripts?id=adguard
  * Access at http://<ip>:3000 (setup) then http://<ip>:80
  */
-import { log, ct, env } from "./lib.mts";
+import { ct, env, log } from "./lib.mts";
+
+$.verbose = false;
 
 const hostname = env("ADGUARD_HOSTNAME", "adguard");
 
 if (await ct.exists(hostname)) {
-  log.skip(`AdGuard Home '${hostname}' already exists`);
-  process.exit(0);
+	log.skip(`AdGuard Home '${hostname}' already exists`);
+	process.exit(0);
 }
 
 log.install("AdGuard Home...");
 
 ct.setVars({
-  cpu: parseInt(env("ADGUARD_CPU", "1")),
-  ram: parseInt(env("ADGUARD_RAM", "512")),
-  disk: parseInt(env("ADGUARD_DISK", "2")),
-  hostname,
+	cpu: parseInt(env("ADGUARD_CPU", "1")),
+	ram: parseInt(env("ADGUARD_RAM", "512")),
+	disk: parseInt(env("ADGUARD_DISK", "2")),
+	hostname,
 });
 
 await ct.runScript("adguard");
