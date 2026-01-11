@@ -12,6 +12,8 @@ curl https://mise.run | sh
 proxy manager
 http://192.168.178.38:81
 
+in the fritzbox set the internal network dns to the adguard ip, both 4 and 6
+
 adguard
 -setup
 http://192.168.178.39:3000

@@ -88,6 +88,21 @@ sync: sync-glance sync-npm
 # Utilities
 # -----------------------------------------------------------------------------
 
+# Copy SSH public key to all servers
+[group('utilities')]
+copy-ssh-id:
+    pnpm exec zx {{ scripts_dir }}/copy-ssh-id.mts
+
+# Enable SSH root login and password auth (run on target machine)
+[group('utilities')]
+enable-ssh-login:
+    pnpm exec zx {{ scripts_dir }}/enable-ssh.login.mts
+
+# SSH to a server by name (no args lists servers)
+[group('utilities')]
+ssh server="":
+    pnpm exec zx {{ scripts_dir }}/ssh.mts {{ server }}
+
 # Remove a container by hostname
 [confirm("Are you sure you want to remove this container?")]
 remove-ct hostname:
