@@ -7,7 +7,7 @@
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import { $ } from "zx";
+import { $, question } from "zx";
 import { log } from "./lib.mts";
 import { servers } from "./servers.mts";
 
@@ -23,13 +23,25 @@ if (!existsSync(keyPath)) {
 }
 const user = "root";
 
-for (const [name, ip] of Object.entries(servers)) {
-	log.info(`Copying SSH key to ${name} (${ip})`);
+for (const [name, server] of Object.entries(servers)) {
+	const confirm = await question(`Copy SSH key to ${name} (${server.ip} / ${server.domain})? [y/N] `);
+	if (confirm.toLowerCase() !== "y") {
+		log.skip(`Skipping ${name}`);
+		continue;
+	}
+
 	try {
-		await $`ssh-copy-id -i ${keyPath} ${user}@${ip}`;
-		log.ok(`SSH key copied to ${name}`);
+		await $`ssh-copy-id -i ${keyPath} ${user}@${server.ip}`;
+		log.ok(`SSH key copied to ${name} via IP`);
 	} catch (error) {
-		log.error(`Failed to copy SSH key to ${name}: ${error}`);
+		log.error(`Failed to copy SSH key to ${name} via IP: ${error}`);
+	}
+
+	try {
+		await $`ssh-copy-id -i ${keyPath} ${user}@${server.domain}`;
+		log.ok(`SSH key copied to ${name} via domain`);
+	} catch (error) {
+		log.error(`Failed to copy SSH key to ${name} via domain: ${error}`);
 	}
 }
 

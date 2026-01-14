@@ -70,9 +70,14 @@ install-glance:
 # Configuration Sync
 # -----------------------------------------------------------------------------
 
+# Generate Glance config from server definitions
+[group('config')]
+generate-glance:
+    pnpm exec zx {{ scripts_dir }}/generate-glance.mts
+
 # Sync Glance dashboard config to container
 [group('config')]
-sync-glance:
+sync-glance: generate-glance
     pnpm exec zx {{ scripts_dir }}/sync-glance.mts
 
 # Sync proxy hosts to Nginx Proxy Manager
@@ -102,6 +107,11 @@ enable-ssh-login:
 [group('utilities')]
 ssh server="":
     pnpm exec zx {{ scripts_dir }}/ssh.mts {{ server }}
+
+# Get IP address of a server by name (no args lists servers)
+[group('utilities')]
+get server="":
+    pnpm exec zx {{ scripts_dir }}/get.mts {{ server }}
 
 # Remove a container by hostname
 [confirm("Are you sure you want to remove this container?")]

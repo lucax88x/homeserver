@@ -8,19 +8,18 @@ import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { $ } from "zx";
-import { ct, env, log } from "./lib.mts";
+import { ct, log } from "./lib.mts";
 
 $.verbose = true;
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoDir = dirname(__dirname);
 const configSrc = join(repoDir, "configs/glance/glance.yml");
-const hostname = env("GLANCE_HOSTNAME", "glance");
-const domain = env("DOMAIN", "home.trazzi");
+const hostname = "glance";
 
 // Get container ID
-const ctid = await ct.id(hostname);
-if (!ctid) {
+const ctId = await ct.id(hostname);
+if (!ctId) {
 	log.error(`Container '${hostname}' not found`);
 	process.exit(1);
 }
@@ -34,15 +33,8 @@ try {
 	process.exit(1);
 }
 
-// Simple env var substitution for ${VAR} syntax
-configContent = configContent.replace(/\$\{(\w+)\}/g, (_, varName) => {
-	return process.env[varName] ?? (varName === "DOMAIN" ? domain : "");
-});
+log.sync(`Glance config -> ${hostname} (CT ${ctId})`);
 
-log.sync(`Glance config -> ${hostname} (CT ${ctid})`);
-
-// Write config to container
-$.verbose = true;
-await $`echo ${configContent} | pct exec ${ctid} -- tee /opt/glance/glance.yml > /dev/null`;
+await $`echo ${configContent} | pct exec ${ctId} -- tee /opt/glance/glance.yml > /dev/null`;
 
 log.ok("Glance config synced (auto-reloads on save)");

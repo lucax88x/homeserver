@@ -1,7 +1,7 @@
 /**
  * Common functions for Proxmox helper scripts
  */
-import { $ } from "zx";
+import { $, chalk } from "zx";
 
 $.verbose = true;
 
@@ -9,19 +9,42 @@ export const SCRIPTS_URL =
 	process.env.SCRIPTS_URL ??
 	"https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main";
 
-export const log = {
-	skip: (msg: string) => console.log(`[SKIP] ${msg}`),
-	install: (msg: string) => console.log(`[INSTALL] ${msg}`),
-	ok: (msg: string) => console.log(`[OK] ${msg}`),
-	error: (msg: string) => console.log(`[ERROR] ${msg}`),
-	info: (msg: string) => console.log(`[INFO] ${msg}`),
-	sync: (msg: string) => console.log(`[SYNC] ${msg}`),
-	create: (msg: string) => console.log(`[CREATE] ${msg}`),
-	auth: (msg: string) => console.log(`[AUTH] ${msg}`),
+export const colors = {
+	name: chalk.cyan.bold,
+	ip: chalk.yellow,
+	domain: chalk.green,
+	port: chalk.magenta,
+	description: chalk.gray,
+	label: chalk.white.bold,
 };
+
+export const log = {
+	skip: (msg: string) => console.log(chalk.gray(`[SKIP] ${msg}`)),
+	install: (msg: string) => console.log(chalk.blue(`[INSTALL] ${msg}`)),
+	ok: (msg: string) => console.log(chalk.green(`[OK] ${msg}`)),
+	error: (msg: string) => console.log(chalk.red(`[ERROR] ${msg}`)),
+	info: (msg: string) => console.log(chalk.cyan(`[INFO] ${msg}`)),
+	sync: (msg: string) => console.log(chalk.yellow(`[SYNC] ${msg}`)),
+	create: (msg: string) => console.log(chalk.magenta(`[CREATE] ${msg}`)),
+	auth: (msg: string) => console.log(chalk.blue(`[AUTH] ${msg}`)),
+};
+
+/** Assert that a command exists, exit if not (ensures we're in Proxmox shell) */
+async function assertCommand(cmd: string): Promise<void> {
+	try {
+		await $`which ${cmd}`.quiet();
+	} catch {
+		log.error(
+			`Command '${cmd}' not found. Are you running this on a Proxmox host?`,
+		);
+		process.exit(1);
+	}
+}
 
 /** Check if a container with given hostname exists */
 async function ctExists(hostname: string): Promise<boolean> {
+	await assertCommand("pct");
+
 	try {
 		const result = await $`pct list 2>/dev/null | grep -qw ${hostname}`;
 		return result.exitCode === 0;
@@ -32,6 +55,8 @@ async function ctExists(hostname: string): Promise<boolean> {
 
 /** Check if a VM with given name exists */
 async function vmExists(name: string): Promise<boolean> {
+	await assertCommand("qm");
+
 	try {
 		const result = await $`qm list 2>/dev/null | grep -qw ${name}`;
 		return result.exitCode === 0;
@@ -42,6 +67,8 @@ async function vmExists(name: string): Promise<boolean> {
 
 /** Get container ID by hostname */
 async function getCtId(hostname: string): Promise<string | null> {
+	await assertCommand("pct");
+
 	try {
 		const result =
 			await $`pct list 2>/dev/null | grep -w ${hostname} | awk '{print $1}'`;
@@ -54,6 +81,8 @@ async function getCtId(hostname: string): Promise<string | null> {
 
 /** Get container IP by ID */
 async function getCtIp(ctid: string): Promise<string | null> {
+	await assertCommand("pct");
+
 	try {
 		const result = await $`pct exec ${ctid} -- hostname -I | awk '{print $1}'`;
 		const ip = result.stdout.trim();

@@ -5,25 +5,23 @@
  * If no server name provided, lists available servers
  */
 
-import { $ } from "zx";
+import { spawn } from "node:child_process";
 import { log } from "./lib.mts";
 import { servers } from "./servers.mts";
-
-$.verbose = true;
 
 const serverName = process.argv[3];
 
 if (!serverName) {
 	console.log("Available servers:");
-	for (const [name, ip] of Object.entries(servers)) {
-		console.log(`  ${name}: ${ip}`);
+	for (const [name, server] of Object.entries(servers)) {
+		console.log(`  ${name}: ${server.ip} (${server.domain})`);
 	}
 	process.exit(0);
 }
 
-const ip = servers[serverName];
+const server = servers[serverName];
 
-if (!ip) {
+if (!server) {
 	log.error(`Unknown server: ${serverName}`);
 	console.log("Available servers:");
 	for (const name of Object.keys(servers)) {
@@ -32,5 +30,12 @@ if (!ip) {
 	process.exit(1);
 }
 
-log.info(`Connecting to ${serverName} (${ip})`);
-await $`ssh root@${ip}`.stdio("inherit", "inherit", "inherit");
+log.info(`Connecting to ${serverName} (${server.ip})`);
+
+const ssh = spawn("ssh", ["-t", `root@${server.ip}`], {
+	stdio: "inherit",
+});
+
+ssh.on("close", (code) => {
+	process.exit(code ?? 0);
+});
