@@ -14,10 +14,14 @@ $.verbose = true;
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoDir = dirname(__dirname);
 const hostsFile = join(repoDir, "configs/npm/hosts.csv");
-const hostname = env("NPM_HOSTNAME", "nginx-proxy-manager");
-const domain = env("DOMAIN", "home.trazzi");
-const npmEmail = env("NPM_EMAIL", "admin@example.com");
-const npmPassword = env("NPM_PASSWORD", "changeme");
+const hostname = "npm";
+const npmEmail = process.env.NPM_EMAIL;
+const npmPassword = process.env.NPM_PASSWORD;
+
+if (!npmEmail || !npmPassword) {
+	log.error("NPM_EMAIL and NPM_PASSWORD environment variables are required");
+	process.exit(1);
+}
 
 interface ProxyHost {
 	subdomain: string;
