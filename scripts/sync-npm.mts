@@ -14,7 +14,7 @@ $.verbose = true;
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoDir = dirname(__dirname);
 const hostsFile = join(repoDir, "configs/npm/hosts.csv");
-const hostname = "npm";
+const hostname = "nginxproxymanager";
 const npmEmail = process.env.NPM_EMAIL;
 const npmPassword = process.env.NPM_PASSWORD;
 
@@ -62,13 +62,20 @@ const tokenResponse = await fetch(`${npmUrl}/tokens`, {
 });
 
 const tokenData = (await tokenResponse.json()) as { token?: string };
-const token = tokenData.token;
 
-if (!token) {
-	log.error("Failed to authenticate. Check NPM_EMAIL and NPM_PASSWORD");
-	console.log("[HINT] Default credentials: admin@example.com / changeme");
+if (tokenResponse.status !== 200) {
+	log.error(
+		`Failed to authenticate. ${tokenResponse.status} ${tokenResponse.statusText}`,
+	);
 	process.exit(1);
 }
+
+if (!tokenData.token) {
+	log.error("Failed to authenticate. Missing token");
+	process.exit(1);
+}
+
+const token = tokenData.token;
 
 log.ok("Authenticated");
 
