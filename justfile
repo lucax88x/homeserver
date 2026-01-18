@@ -66,6 +66,41 @@ install-portainer:
 install-glance:
     pnpm exec zx {{ scripts_dir }}/install-glance.mts
 
+# AIOStreams Stremio Addon (http://<ip>:3000)
+[group('services')]
+install-aiostreams:
+    pnpm exec zx {{ scripts_dir }}/install-aiostreams.mts
+
+# Bazarr Subtitle Manager (http://<ip>:6767)
+[group('services')]
+install-bazarr:
+    pnpm exec zx {{ scripts_dir }}/install-bazarr.mts
+
+# Radarr Movie Manager (http://<ip>:7878)
+[group('services')]
+install-radarr:
+    pnpm exec zx {{ scripts_dir }}/install-radarr.mts
+
+# Sonarr TV Series Manager (http://<ip>:8989)
+[group('services')]
+install-sonarr:
+    pnpm exec zx {{ scripts_dir }}/install-sonarr.mts
+
+# Jellyseerr Request Manager (http://<ip>:5055)
+[group('services')]
+install-jellyseerr:
+    pnpm exec zx {{ scripts_dir }}/install-jellyseerr.mts
+
+# Prowlarr Indexer Manager (http://<ip>:9696)
+[group('services')]
+install-prowlarr:
+    pnpm exec zx {{ scripts_dir }}/install-prowlarr.mts
+
+# RDTClient Real-Debrid Torrent Client (http://<ip>:6500)
+[group('services')]
+install-rdtclient:
+    pnpm exec zx {{ scripts_dir }}/install-rdtclient.mts
+
 # -----------------------------------------------------------------------------
 # Configuration Sync
 # -----------------------------------------------------------------------------
