@@ -4,30 +4,19 @@
  * Creates/updates proxy hosts from configs/npm/hosts.csv
  * based on swagger https://github.com/NginxProxyManager/nginx-proxy-manager/tree/develop/backend/schema
  */
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { diff } from "deep-object-diff";
-import { $ } from "zx";
+import { $, question } from "zx";
 import { log } from "./lib.mts";
 import { type Server, servers } from "./servers.mts";
 
 $.verbose = true;
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
 const npmEmail = process.env.NPM_EMAIL;
 const npmPassword = process.env.NPM_PASSWORD;
 
 if (!npmEmail || !npmPassword) {
 	log.error("NPM_EMAIL and NPM_PASSWORD environment variables are required");
 	process.exit(1);
-}
-
-interface ProxyHost {
-	subdomain: string;
-	forwardHost: string;
-	forwardPort: number;
-	ssl: boolean;
-	websockets: boolean;
 }
 
 interface NpmProxyHost {
@@ -83,21 +72,27 @@ const existingResponse = await fetch(`${npmUrl}/nginx/proxy-hosts`, {
 });
 const existingHosts = (await existingResponse.json()) as NpmProxyHost[];
 
-log.info(existingHosts);
-
-log.info(existingHosts.length + " existing proxy hosts found");
+log.info("existing proxy hosts found");
+// log.info(JSON.stringify(existingHosts));
 
 // Create proxy host
 async function createProxyHost(server: Server): Promise<void> {
 	const existing = existingHosts.find((h) =>
-		h.domain_names.includes(server.domain),
+		server.domains.some((d) => h.domain_names.includes(d)),
 	);
 
+	const httpPort = server.ports.find((p) => p.type === "http");
+
+	if (!httpPort) {
+		log.skip(`${server.domains.join(", ")} has no http port`);
+		return;
+	}
+
 	const payload = {
-		domain_names: [server.domain],
+		domain_names: server.domains,
 		forward_scheme: "http",
 		forward_host: server.ip,
-		forward_port: server.ports[0].port,
+		forward_port: httpPort.port,
 		block_exploits: true,
 		allow_websocket_upgrade: false,
 		access_list_id: 0,
@@ -148,18 +143,27 @@ async function createProxyHost(server: Server): Promise<void> {
 
 		if (Object.keys(differences).length > 0) {
 			log.error(
-				`${server.domain} (ID: ${existing.id}) has configuration drift:`,
+				`${server.domains.join(", ")} (ID: ${existing.id}) has configuration drift:`,
 			);
-    
-			log.info(JSON.stringify(differences, null, 2));
+
+			log.error(JSON.stringify(differences, null, 2));
 		} else {
-			log.skip(`${server.domain} already exists (ID: ${existing.id})`);
+			log.skip(
+				`${server.domains.join(", ")} already exists (ID: ${existing.id})`,
+			);
 		}
 
 		return;
 	}
 
-	log.create(`${server.domain} -> ${server.ip}:${server.ports[0].port}`);
+	log.create(`${server.domains.join(", ")} -> ${server.ip}:${httpPort.port}`);
+
+	const confirm = await question("Create this proxy host? [y/N] ");
+
+	if (confirm.toLowerCase() !== "y") {
+		log.skip("Skipped");
+		return;
+	}
 
 	const response = await fetch(`${npmUrl}/nginx/proxy-hosts`, {
 		method: "POST",
@@ -170,8 +174,16 @@ async function createProxyHost(server: Server): Promise<void> {
 		body: JSON.stringify(payload),
 	});
 
-	const result = (await response.json()) as { id?: number };
-	log.info(result.id ?? "FAILED");
+	if (response.status === 200) {
+		const result = (await response.json()) as { id?: number };
+
+		log.info(`created with id ${result.id}`);
+		return;
+	}
+
+	log.error(
+		`Failed to create ${server.domains.join(", ")}: ${response.status} ${response.statusText}`,
+	);
 }
 
 // Parse hosts file
@@ -187,8 +199,3 @@ for (const key in servers) {
 log.info("");
 log.ok("Proxy hosts synced");
 log.info("");
-log.info("[NEXT] To enable Let's Encrypt:");
-log.info(`  1. Open NPM web UI: http://${npmIp}:81`);
-log.info("  2. Edit each proxy host -> SSL tab");
-log.info("  3. Request new SSL certificate -> Let's Encrypt");
-log.info("  4. Enable 'Force SSL' and 'HTTP/2 Support'");
