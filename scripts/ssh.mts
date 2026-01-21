@@ -14,7 +14,7 @@ const serverName = process.argv[3];
 if (!serverName) {
 	console.log("Available servers:");
 	for (const [name, server] of Object.entries(servers)) {
-		console.log(`  ${name}: ${server.ip} (${server.domain})`);
+		console.log(`  ${name}: ${server.ip} (${server.domains[0]})`);
 	}
 	process.exit(0);
 }

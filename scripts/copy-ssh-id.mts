@@ -24,7 +24,7 @@ if (!existsSync(keyPath)) {
 const user = "root";
 
 for (const [name, server] of Object.entries(servers)) {
-	const confirm = await question(`Copy SSH key to ${name} (${server.ip} / ${server.domain})? [y/N] `);
+	const confirm = await question(`Copy SSH key to ${name} (${server.ip} / ${server.domains[0]})? [y/N] `);
 	if (confirm.toLowerCase() !== "y") {
 		log.skip(`Skipping ${name}`);
 		continue;
@@ -38,7 +38,7 @@ for (const [name, server] of Object.entries(servers)) {
 	}
 
 	try {
-		await $`ssh-copy-id -i ${keyPath} ${user}@${server.domain}`;
+		await $`ssh-copy-id -i ${keyPath} ${user}@${server.domains[0]}`;
 		log.ok(`SSH key copied to ${name} via domain`);
 	} catch (error) {
 		log.error(`Failed to copy SSH key to ${name} via domain: ${error}`);

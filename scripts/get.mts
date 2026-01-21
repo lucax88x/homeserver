@@ -13,7 +13,7 @@ const serverName = process.argv[3];
 if (!serverName) {
 	console.log(colors.label("Available servers:"));
 	for (const [name, server] of Object.entries(servers)) {
-		console.log(`  ${colors.name(name)}: ${colors.ip(server.ip)} (${colors.domain(server.domain)})`);
+		console.log(`  ${colors.name(name)}: ${colors.ip(server.ip)} (${colors.domain(server.domains[0])})`);
 		for (const { port, description } of server.ports) {
 			console.log(`    - ${colors.port(port)}: ${colors.description(description)}`);
 		}
@@ -33,7 +33,7 @@ if (!server) {
 }
 
 console.log(`${colors.label("IP:")} ${colors.ip(server.ip)}`);
-console.log(`${colors.label("Domain:")} ${colors.domain(server.domain)}`);
+console.log(`${colors.label("Domain:")} ${colors.domain(server.domains[0])}`);
 if (server.ports.length > 0) {
 	console.log(colors.label("Ports:"));
 	for (const { port, description } of server.ports) {

@@ -47,13 +47,13 @@ export function createGlanceConfig(
 
 	const monitorSites: GlanceSite[] = monitorableServers.map((server) => ({
 		title: server.title,
-		url: `https://${server.domain}`,
+		url: `https://${server.domains[0]}`,
 		icon: server.icon,
 	}));
 
 	const bookmarkLinks: GlanceLink[] = monitorableServers.map((server) => ({
 		title: server.title,
-		url: `https://${server.domain}`,
+		url: `https://${server.domains[0]}`,
 		icon: server.icon,
 	}));
 
